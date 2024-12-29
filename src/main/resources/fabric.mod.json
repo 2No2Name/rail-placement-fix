@@ -3,13 +3,13 @@
 	"id": "rail-placement-fix",
 	"version": "${version}",
 	"name": "Rail Placement Fix",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Sneak and look at the corner of a block to place curved rails, or place sloped rails like a top-side slab.",
 	"authors": [
-		"Me!"
+		"2No2Name"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/2No2Name/rail-placement-fix",
+		"sources": "https://github.com/2No2Name/rail-placement-fix"
 	},
 	"icon": "assets/rail-placement-fix/icon.png",
 	"environment": "*",
@@ -29,12 +29,6 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.16.9",
-		"minecraft": "~1.21.4",
-		"java": ">=21",
-		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
+		"minecraft": "*"
 	}
 }

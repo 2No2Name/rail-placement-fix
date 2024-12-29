@@ -3,7 +3,7 @@
 	"package": "no2.railplacementfix.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"BaseRailBlockMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
