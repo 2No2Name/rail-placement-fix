@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "rail-placement-fix",
+	"version": "${version}",
+	"name": "Rail Placement Fix",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"icon": "assets/rail-placement-fix/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"no2.railplacementfix.RailPlacementFix"
+		],
+		"client": [
+			"no2.railplacementfix.RailPlacementFixClient"
+		]
+	},
+	"mixins": [
+		"rail-placement-fix.mixins.json",
+		{
+			"config": "rail-placement-fix.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
