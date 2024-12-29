@@ -3,7 +3,7 @@
 	"id": "rail-placement-fix",
 	"version": "${version}",
 	"name": "Rail Placement Fix",
-	"description": "Sneak and look at the corner of a block to place curved rails, or place sloped rails like a top-side slab.",
+	"description": "Rail Placement Fix is a Minecraft mod that allows you to place rails more precisely. By sneaking and looking at the corner of a block, you can place curved rails or place sloped rails like a top-side slab. This mod enables you to create any rail pattern you like without changing the shape of neighboring rails.",
 	"authors": [
 		"2No2Name"
 	],
