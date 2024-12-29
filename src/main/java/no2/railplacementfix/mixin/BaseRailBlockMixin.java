@@ -1,8 +1,5 @@
 package no2.railplacementfix.mixin;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -14,6 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -22,7 +20,9 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import static no2.railplacementfix.common.RailPlacementHelper.NO_CONNECT_POS;
 
@@ -40,12 +40,14 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
 
     @Shadow public abstract Property<RailShape> getShapeProperty();
 
+    @Shadow protected abstract BlockState updateDir(Level level, BlockPos blockPos, BlockState blockState, boolean bl);
+
     @Inject(method = "getStateForPlacement", at = @At(
             value = "INVOKE_ASSIGN", shift = At.Shift.AFTER,
             target = "Lnet/minecraft/world/item/context/BlockPlaceContext;getHorizontalDirection()Lnet/minecraft/core/Direction;"
-    ), cancellable = true
+    ), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void getSmartPlacementState(BlockPlaceContext blockPlaceContext, CallbackInfoReturnable<BlockState> cir, @Local boolean shouldWaterlog, @Local BlockState defaultRailState, @Local Direction placementDirection) {
+    private void getSmartPlacementState(BlockPlaceContext blockPlaceContext, CallbackInfoReturnable<BlockState> cir, boolean shouldWaterlog, BlockState defaultRailState, Direction placementDirection) {
         if (blockPlaceContext.getPlayer() != null && blockPlaceContext.getPlayer().isShiftKeyDown()) {
             BlockPos blockPos = blockPlaceContext.getClickedPos();
             Direction clickSide = blockPlaceContext.getClickedFace();
@@ -64,7 +66,7 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
                 betterRailShape = getCurvedRailShape(clickLocation, blockPos);
             }
             if (betterRailShape != null) {
-                cir.setReturnValue(defaultRailState.trySetValue(WATERLOGGED, shouldWaterlog).trySetValue(this.getShapeProperty(), betterRailShape));
+                cir.setReturnValue(defaultRailState.setValue(WATERLOGGED, shouldWaterlog).setValue(this.getShapeProperty(), betterRailShape));
             }
             NO_CONNECT_POS.set(blockPos);
         }
@@ -105,28 +107,32 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
 
     @Unique
     private static @Nullable RailShape getSlopedRailShape(Direction uphillDirection) {
-        return switch (uphillDirection) {
-            case NORTH -> RailShape.ASCENDING_NORTH;
-            case SOUTH -> RailShape.ASCENDING_SOUTH;
-            case WEST -> RailShape.ASCENDING_WEST;
-            case EAST -> RailShape.ASCENDING_EAST;
-            case null, default -> null;
-        };
+        if (uphillDirection == Direction.NORTH) {
+            return RailShape.ASCENDING_NORTH;
+        } else if (uphillDirection == Direction.SOUTH) {
+            return RailShape.ASCENDING_SOUTH;
+        } else if (uphillDirection == Direction.WEST) {
+            return RailShape.ASCENDING_WEST;
+        } else if (uphillDirection == Direction.EAST) {
+            return RailShape.ASCENDING_EAST;
+        }
+        return null;
     }
 
-    @WrapOperation(
+    @Redirect(
             method = "updateState(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Z)Lnet/minecraft/world/level/block/state/BlockState;",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/BaseRailBlock;updateDir(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Z)Lnet/minecraft/world/level/block/state/BlockState;")
     )
-    private BlockState cancelUpdates(BaseRailBlock instance, Level level, BlockPos blockPos, BlockState blockState, boolean bl, Operation<BlockState> original) {
+    private BlockState cancelUpdates(BaseRailBlock instance, Level level, BlockPos blockPos, BlockState blockState, boolean bl) {
         BlockPos noUpdatePos = NO_CONNECT_POS.get();
 
         if (noUpdatePos != null) {
             NO_CONNECT_POS.set(null);
         }
 
-        if (!blockPos.equals(noUpdatePos))
-            return original.call(instance, level, blockPos, blockState, bl);
+        if (!blockPos.equals(noUpdatePos)) {
+            return this.updateDir(level, blockPos, blockState, bl);
+        }
         return blockState;
     }
 }

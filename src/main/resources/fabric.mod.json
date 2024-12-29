@@ -16,19 +16,12 @@
 	"entrypoints": {
 		"main": [
 			"no2.railplacementfix.RailPlacementFix"
-		],
-		"client": [
-			"no2.railplacementfix.RailPlacementFixClient"
 		]
 	},
 	"mixins": [
-		"rail-placement-fix.mixins.json",
-		{
-			"config": "rail-placement-fix.client.mixins.json",
-			"environment": "client"
-		}
+		"rail-placement-fix.mixins.json"
 	],
 	"depends": {
-		"minecraft": "*"
+		"minecraft": ">=1.17"
 	}
 }
