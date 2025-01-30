@@ -2,13 +2,14 @@
 
 # Rail Placement Fix
 
-Rail Placement Fix is a Minecraft mod that allows you to place rails more precisely. By sneaking and looking at the corner of a block, you can place curved rails or place sloped rails like a top-side slab. This mod enables you to create any rail pattern you like without changing the shape of neighboring rails.
+Rail Placement Fix is a Minecraft mod that allows you to place rails more precisely. By sneaking and looking at the corner of a block, you can place curved rails or place sloped rails like a top-side slab. This mod makes placing rails intuitive and enables you to create any rail pattern you like.
 
 ## Features
 
 - Place curved rails by sneaking and looking at the corner of a block.
-- Place sloped rails like a top-side slab.
-- Maintain the shape of neighboring rails while placing new rails.
+- Place sloped rails like a top-side slab when sneaking.
+- Maintain the shape of neighboring rails while placing new rails when sneaking.
+- Improved and non-directional rail connectivity with partially connected straight rails when manually placing rails.
 
 ## Installation
 
@@ -22,3 +23,4 @@ Must be installed on the server to work in multiplayer. For usage in singleplaye
 - To place a curved rail, sneak and look at the corner of a block where you want to place the rail.
 - To place a sloped rail, sneak and place the rail like a top-side slab.
 - To avoid modifying neighboring rails, sneak while placing any rail.
+- To use the improved rail connectivity, place a rail next to a straight rail (powered, activator or detector rail) that is connected to another rail at only one side.
