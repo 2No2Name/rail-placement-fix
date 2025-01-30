@@ -84,7 +84,7 @@ publishMods {
 	file = remapJar.archiveFile
 
 	def mod_version = "${project.mod_version}"
-	def fabric_mod_version = mod_version + "-fabric"
+	def fabric_mod_version = mod_version
 	def fabric_suffix = "for Fabric"
 	def displayNamePrefix = project.property('mod_name').toString()
 	def cfDisplayNamePrefix = displayNamePrefix + " " + mod_version
