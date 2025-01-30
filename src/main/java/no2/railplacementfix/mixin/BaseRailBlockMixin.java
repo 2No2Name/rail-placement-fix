@@ -11,7 +11,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -25,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import static no2.railplacementfix.common.RailPlacementHelper.NO_CONNECT_POS;
+import static no2.railplacementfix.common.RailPlacementHelper.PLAYER_PLACED_POS;
 
 @Mixin(BaseRailBlock.class)
 public abstract class BaseRailBlockMixin extends Block implements SimpleWaterloggedBlock {
@@ -48,8 +48,9 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
     ), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void getSmartPlacementState(BlockPlaceContext blockPlaceContext, CallbackInfoReturnable<BlockState> cir, boolean shouldWaterlog, BlockState defaultRailState, Direction placementDirection) {
+        BlockPos blockPos = blockPlaceContext.getClickedPos();
+        PLAYER_PLACED_POS.set(blockPos);
         if (blockPlaceContext.getPlayer() != null && blockPlaceContext.getPlayer().isShiftKeyDown()) {
-            BlockPos blockPos = blockPlaceContext.getClickedPos();
             Direction clickSide = blockPlaceContext.getClickedFace();
 
             Vec3 clickLocation = blockPlaceContext.getClickLocation();
@@ -127,12 +128,14 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
         BlockPos noUpdatePos = NO_CONNECT_POS.get();
 
         if (noUpdatePos != null) {
-            NO_CONNECT_POS.set(null);
+            NO_CONNECT_POS.remove();
         }
 
         if (!blockPos.equals(noUpdatePos)) {
             return this.updateDir(level, blockPos, blockState, bl);
         }
+        PLAYER_PLACED_POS.remove();
+
         return blockState;
     }
 }
