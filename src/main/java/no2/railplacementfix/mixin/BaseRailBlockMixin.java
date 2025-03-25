@@ -1,5 +1,8 @@
 package no2.railplacementfix.mixin;
 
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -21,7 +24,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import static no2.railplacementfix.common.RailPlacementHelper.NO_CONNECT_POS;
 import static no2.railplacementfix.common.RailPlacementHelper.PLAYER_PLACED_POS;
@@ -42,12 +44,14 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
 
     @Shadow protected abstract BlockState updateDir(Level level, BlockPos blockPos, BlockState blockState, boolean bl);
 
-    @Inject(method = "getStateForPlacement", at = @At(
-            value = "INVOKE_ASSIGN", shift = At.Shift.AFTER,
-            target = "Lnet/minecraft/world/item/context/BlockPlaceContext;getHorizontalDirection()Lnet/minecraft/core/Direction;"
-    ), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD
-    )
-    private void getSmartPlacementState(BlockPlaceContext blockPlaceContext, CallbackInfoReturnable<BlockState> cir, boolean shouldWaterlog, BlockState defaultRailState, Direction placementDirection) {
+    @Definition(id = "getHorizontalDirection", method = "Lnet/minecraft/world/item/context/BlockPlaceContext;getHorizontalDirection()Lnet/minecraft/core/Direction;")
+    @Expression("? = ?.getHorizontalDirection()")
+    @Inject(method = "getStateForPlacement", at = @At(value = "MIXINEXTRAS:EXPRESSION", shift = At.Shift.AFTER), cancellable = true)
+    private void getSmartPlacementState(BlockPlaceContext blockPlaceContext,
+                                        CallbackInfoReturnable<BlockState> cir,
+                                        @Local(name = "isWaterSource") boolean shouldWaterlog,
+                                        @Local(name = "state") BlockState defaultRailState,
+                                        @Local(name = "direction") Direction placementDirection) {
         BlockPos blockPos = blockPlaceContext.getClickedPos();
         PLAYER_PLACED_POS.set(blockPos);
         if (blockPlaceContext.getPlayer() != null && blockPlaceContext.getPlayer().isShiftKeyDown()) {
