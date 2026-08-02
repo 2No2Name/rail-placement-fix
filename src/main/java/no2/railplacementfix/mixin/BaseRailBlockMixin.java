@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseRailBlock;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.phys.Vec3;
+import no2.railplacementfix.RailPlacementFix;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,7 +56,8 @@ public abstract class BaseRailBlockMixin extends Block implements SimpleWaterlog
                                         @Local(name = "direction") Direction placementDirection) {
         BlockPos blockPos = blockPlaceContext.getClickedPos();
         PLAYER_PLACED_POS.set(blockPos);
-        if (blockPlaceContext.getPlayer() != null && blockPlaceContext.getPlayer().isShiftKeyDown()) {
+        Player player = blockPlaceContext.getPlayer();
+        if (player != null && player.isShiftKeyDown() && RailPlacementFix.isEnabledFor(player)) {
             Direction clickSide = blockPlaceContext.getClickedFace();
 
             Vec3 clickLocation = blockPlaceContext.getClickLocation();
