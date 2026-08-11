@@ -1,25 +1,24 @@
 package no2.railplacementfix;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMaps;
+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import net.fabricmc.api.ModInitializer;
 
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 
 public class RailPlacementFix implements ModInitializer {
 	public static final String MOD_ID = "rail-placement-fix";
@@ -31,7 +30,8 @@ public class RailPlacementFix implements ModInitializer {
 
 	public static boolean EXPERIMENTAL_FEATURES = true;
 
-    private static final Set<UUID> ENABLED_PLAYERS = new ObjectOpenHashSet<>();
+    public static boolean ENABLED_BY_DEFAULT = true;
+    public static final Object2BooleanMap<UUID> PLAYERS = new Object2BooleanOpenHashMap<>();
 
     @Override
 	public void onInitialize() {
@@ -39,76 +39,81 @@ public class RailPlacementFix implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-        loadEnabled();
-
-        CommandRegistrationCallback.EVENT.register((dispatcher, r, e) -> {
-            dispatcher.register(Commands.literal("rpf").then(Commands.literal("toggle").executes((c) -> {
-                Player player = c.getSource().getPlayer();
-                if (player == null) {
-                    c.getSource().sendFailure(Component.literal("Must be a player to run this command."));
-                    return 0;
-                }
-
-                UUID uuid = player.getUUID();
-                if (ENABLED_PLAYERS.remove(uuid)) {
-                    c.getSource().sendSystemMessage(Component.literal("Disabled Rail Placement Fix."));
-                } else {
-                    ENABLED_PLAYERS.add(uuid);
-                    c.getSource().sendSystemMessage(Component.literal("Enabled Rail Placement Fix."));
-                }
-
-                saveEnabled();
-
-                return 1;
-            })));
-        });
+        loadConfig();
     }
 
-    private static void saveEnabled() {
+    public static void saveConfig() {
         Path dir = FabricLoader.getInstance().getConfigDir().resolve("railplacementfix/");
         try {
             Files.createDirectories(dir);
 
-            ByteBuffer buf = ByteBuffer.allocate(ENABLED_PLAYERS.size() * 37);
-            for (UUID uuid : ENABLED_PLAYERS) {
-                buf.put(uuid.toString().getBytes(StandardCharsets.UTF_8));
-                buf.put((byte) '\n');
+            StringBuilder buf = new StringBuilder(10 + PLAYERS.size() * 39);
+            buf.append(ENABLED_BY_DEFAULT ? "default y\n" : "default n\n");
+
+            var iter = Object2BooleanMaps.fastIterator(PLAYERS);
+            while (iter.hasNext()) {
+                var entry = iter.next();
+                buf.append(entry.getKey());
+                buf.append(entry.getBooleanValue() ? " y\n" : " n\n");
             }
 
-            Path path = dir.resolve("players_enabled.txt");
-            Files.write(path, buf.array(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Path path = dir.resolve("config.txt");
+            Files.writeString(path, buf.toString(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             LOGGER.error("Could not save enabled players", e);
         }
 
-        LOGGER.info("Wrote {} UUIDs of players with Rail Placement Fix enabled", ENABLED_PLAYERS.size());
+        LOGGER.info("Wrote config with states of {} players", PLAYERS.size());
     }
 
-    private static void loadEnabled() {
+    private static void loadConfig() {
         Path dir = FabricLoader.getInstance().getConfigDir().resolve("railplacementfix/");
         try {
             Files.createDirectories(dir);
 
-            Path path = dir.resolve("players_enabled.txt");
+            Path path = dir.resolve("config.txt");
             List<String> lines = Files.readAllLines(path);
 
-            for (int line = 0; line < lines.size(); line++) {
-                var uuidStr = lines.get(line);
+            for (int lineIdx = 0; lineIdx < lines.size(); lineIdx++) {
+                String line = lines.get(lineIdx);
+                String[] split = line.split(" ");
+                if (split.length != 2) {
+                    LOGGER.error("Expected format `<key> [y|n]` at line {} of {}:  but got {}", lineIdx + 1, path, line);
+                    continue;
+                }
+
+                String enabledStr = split[1];
+                boolean enabled;
+                if (enabledStr.equalsIgnoreCase("y") || enabledStr.equalsIgnoreCase("yes") || enabledStr.equalsIgnoreCase("true")) {
+                    enabled = true;
+                } else if (enabledStr.equalsIgnoreCase("n") || enabledStr.equalsIgnoreCase("no") || enabledStr.equalsIgnoreCase("false")) {
+                    enabled = false;
+                } else {
+                    LOGGER.error("Expected boolean at line {} of {} but got {}", lineIdx + 1, path, enabledStr);
+                    continue;
+                }
+
+                String key = split[0];
+                if (key.equals("default")) {
+                    ENABLED_BY_DEFAULT = enabled;
+                    continue;
+                }
+
                 try {
-                    UUID uuid = UUID.fromString(uuidStr);
-                    ENABLED_PLAYERS.add(uuid);
+                    UUID uuid = UUID.fromString(key);
+                    PLAYERS.put(uuid, enabled);
                 } catch (Exception e) {
-                    LOGGER.error("Malformed UUID {} at line {} of {}: {}", uuidStr, line + 1, path, e.getMessage());
+                    LOGGER.error("Malformed UUID {} at line {} of {}: {}", key, lineIdx + 1, path, e.getMessage());
                 }
             }
         } catch (IOException e) {
             LOGGER.error("Could not load enabled players", e);
         }
 
-        LOGGER.info("Loaded {} UUIDs of players with Rail Placement Fix enabled", ENABLED_PLAYERS.size());
+        LOGGER.info("Loaded {} UUIDs of players with Rail Placement Fix enabled", PLAYERS.size());
     }
 
     public static boolean isEnabledFor(Player player) {
-        return ENABLED_PLAYERS.contains(player.getUUID());
+        return PLAYERS.computeIfAbsent(player.getUUID(), ignored -> ENABLED_BY_DEFAULT);
     }
 }

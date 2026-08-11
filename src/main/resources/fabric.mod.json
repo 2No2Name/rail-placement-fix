@@ -22,7 +22,6 @@
 		"rail-placement-fix.mixins.json"
 	],
 	"depends": {
-		"minecraft": ">=1.17",
-        "fabric-api": "*"
+		"minecraft": ">=1.17"
 	}
 }

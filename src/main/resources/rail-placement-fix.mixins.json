@@ -3,6 +3,8 @@
   "package": "no2.railplacementfix.mixin",
   "mixins": [
     "BaseRailBlockMixin",
+    "CommandsMixin",
+    "PlayerListMixin",
     "RailStateMixin"
   ],
   "injectors": {
